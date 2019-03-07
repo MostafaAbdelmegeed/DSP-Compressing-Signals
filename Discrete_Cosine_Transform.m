@@ -10,7 +10,7 @@ compression_factor=4;
 
 % Removing all the high frequencies and taking only the first quarter of
 % the spectrum (Low frequencies)
-discreteCosineTransform(size(discreteCosineTransform,2)/compression_factor:size(discreteCosineTransform,2))=[];
+discreteCosineTransform(size(discreteCosineTransform,2)/compression_factor:size(discreteCosineTransform,2))=zeros;
 
 
 %iterator=1;
