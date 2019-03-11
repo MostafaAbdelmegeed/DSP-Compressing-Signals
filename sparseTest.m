@@ -1,23 +1,39 @@
+% testing Emmanuel's Algorithm using signal
+
 clear all;
 ecgSignal = xlsread('ECG Signal.csv');
 discreteCosineTransform = dct(ecgSignal);
 
-threshold = 0;
+threshold1 = .005;
+threshold2 = -.005;
+
 counter = 0;
 dlmwrite ('original_file.txt',ecgSignal,'delimiter', ' ','newline','pc');
 x= length (ecgSignal);
 
 for i=1:size(discreteCosineTransform)
-    if discreteCosineTransform(i)>threshold
+    if discreteCosineTransform(i)>threshold1
+       
         counter = counter + 1;
+    
+    end
+end
+
+for i=1:size(discreteCosineTransform)
+    if discreteCosineTransform(i) <threshold2
+       
+        counter = counter + 1;
+    
     end
 end
 
 compressedSignal = zeros(counter,2);
 for i=1:counter
-    if discreteCosineTransform(i)>threshold
+    if discreteCosineTransform(i)>threshold1
+        if discreteCosineTransform(i)<threshold2
         compressedSignal(i,1) = i;
         compressedSignal(i,2) = discreteCosineTransform(i);
+        end
     end
 end
  
@@ -28,8 +44,7 @@ end
  
  
  
- [i,j,v] = find(back_file) ;
- recovery_signal=zeros(x,1);
+ [i,j,v] = find(back_file) ;recovery_signal=zeros(x,1);
  recovery_signal(i,1)= v (i);
  
 recoveredSignal=idct(recovery_signal);
