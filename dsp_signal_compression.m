@@ -22,7 +22,7 @@ function varargout = dsp_signal_compression(varargin)
 
 % Edit the above text to modify the response to help dsp_signal_compression
 
-% Last Modified by GUIDE v2.5 11-Mar-2019 23:01:07
+% Last Modified by GUIDE v2.5 11-Mar-2019 23:48:37
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -58,6 +58,7 @@ handles.output = hObject;
 handles.mode='Lossy';
 handles.basis='haar';
 handles.compressed_filename='compressed.mat';
+handles.MATFLAG=false;
 % Update handles structure
 guidata(hObject, handles);
 
@@ -81,21 +82,20 @@ function browse_button_Callback(hObject, eventdata, handles)
 % hObject    handle to browse_button (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-[handles.filename,handles.filepath] = uigetfile('*.csv;*.xls;*.xlsv;*.xlsx','Select a Signal');
+[handles.filename,handles.filepath] = uigetfile('*.csv;*.xls;*.xlsv;*.xlsx;*.mat','Select a Signal');
 handles.file = [handles.filepath handles.filename];
-
 if handles.file
     set(handles.compress_button,'Enable','off');
     set(handles.decompress_button,'Enable','off');
-    handles.COMPRESS_FLAG=false;
-    handles.DECOMPRESS_FLAG=false;
     [path,name,ext]=fileparts(handles.file);
+    directory=dir(handles.file);
+    handles.filesize=directory.bytes;
     if strcmp('.mat',ext)
-        handles.DECOMPRESS_FLAG=true;
-        handles.compressed_file = matfile(handles.file);
-        set(handles.decompress_button,'Enable','on');
+        handles.MATFLAG=true;
+        file = matfile(handles.file);
+        handles.signal=file.ult_sig(:,1);
+        set(handles.compress_button,'Enable','on');
     else
-        handles.COMPRESS_FLAG=true;
         handles.signal= xlsread(handles.file);
         set(handles.compress_button,'Enable','on');
     end
@@ -158,6 +158,14 @@ sparsed_transformed_signal=[sparsed_approximated_signal sparsed_details_signal];
 % Save the file squeezed out of zeros
 save(handles.compressed_filename,'sparsed_transformed_signal');
 
+% Calculating compression factor
+compressed_file=dir(handles.compressed_filename);
+handles.compressed_file_size= compressed_file.bytes;
+compression_ratio=handles.compressed_file_size/handles.filesize;
+set(handles.edit1,'String',compression_ratio);
+
+
+% Plotting
 axes(handles.original_axis);
 plot(handles.signal(1:1000,1))
 hold on
@@ -174,7 +182,17 @@ function decompress_button_Callback(hObject, eventdata, handles)
 compressed_file = matfile(handles.compressed_filename);
 full_signal=full(compressed_file.sparsed_transformed_signal);
 retrievedSignal=idwt(full_signal(:,1),full_signal(:,2),handles.basis);
+if ~handles.MATFLAG
 xlswrite('decompressed.xlsx',retrievedSignal);
+decompressed_file=dir('decompressed.xlsx');
+else
+save('decompressed.mat','retrievedSignal');
+decompressed_file=dir('decompressed.mat');
+end
+
+% Calculating Data Loss
+Data_loss=1-(decompressed_file.bytes/handles.filesize);
+set(handles.edit2,'String',Data_loss);
 plot(retrievedSignal(1:1000,1));
 legend('Original','Decompressed');
 guidata(hObject,handles);
@@ -211,3 +229,49 @@ function uitoggletool4_ClickedCallback(hObject, eventdata, handles)
 % hObject    handle to uitoggletool4 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+
+
+function edit1_Callback(hObject, eventdata, handles)
+% hObject    handle to edit1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit1 as text
+%        str2double(get(hObject,'String')) returns contents of edit1 as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit1_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edit2_Callback(hObject, eventdata, handles)
+% hObject    handle to edit2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit2 as text
+%        str2double(get(hObject,'String')) returns contents of edit2 as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit2_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end

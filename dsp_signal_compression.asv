@@ -58,6 +58,7 @@ handles.output = hObject;
 handles.mode='Lossy';
 handles.basis='haar';
 handles.compressed_filename='compressed.mat';
+handles.MATFLAG=false;
 % Update handles structure
 guidata(hObject, handles);
 
@@ -81,21 +82,18 @@ function browse_button_Callback(hObject, eventdata, handles)
 % hObject    handle to browse_button (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-[handles.filename,handles.filepath] = uigetfile('*.csv;*.xls;*.xlsv;*.xlsx','Select a Signal');
+[handles.filename,handles.filepath] = uigetfile('*.csv;*.xls;*.xlsv;*.xlsx;*.mat','Select a Signal');
 handles.file = [handles.filepath handles.filename];
-
 if handles.file
     set(handles.compress_button,'Enable','off');
     set(handles.decompress_button,'Enable','off');
-    handles.COMPRESS_FLAG=false;
-    handles.DECOMPRESS_FLAG=false;
     [path,name,ext]=fileparts(handles.file);
     if strcmp('.mat',ext)
-        handles.DECOMPRESS_FLAG=true;
-        handles.compressed_file = matfile(handles.file);
-        set(handles.decompress_button,'Enable','on');
+        handles.MATFLAG=true;
+        file = matfile(handles.file);
+        handles.signal=file.ult_sig(:,1);
+        set(handles.compress_button,'Enable','on');
     else
-        handles.COMPRESS_FLAG=true;
         handles.signal= xlsread(handles.file);
         set(handles.compress_button,'Enable','on');
     end
