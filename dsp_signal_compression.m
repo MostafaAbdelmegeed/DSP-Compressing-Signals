@@ -137,12 +137,15 @@ function compress_button_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+
+
 % transformation
 [approximated_signal,details_signal]=dwt(handles.signal,handles.basis);
 
 % calculating some compression parameters
 [threshold,sorh,keepapp]=ddencmp('cmp','wv',details_signal);
 
+if strcmp(handles.mode,'Lossy');
 % Looping to zerofy all the values in my threshold range
 iterator=1;
 while(iterator<size(details_signal,1))
@@ -151,6 +154,18 @@ while(iterator<size(details_signal,1))
     end
       iterator=iterator+1;
 end
+else 
+    % in case of choosing lossless
+iterator=1;
+% setting threshold to lose the insignificant imformation
+while(iterator<size(details_signal,1))
+    if details_signal(iterator,1) > -1*(threshold/100) && details_signal(iterator,1) < (threshold/100)
+        details_signal(iterator,1)=0;
+    end
+      iterator=iterator+1;
+end
+end
+    
 % Sparse to squeeze zeros out
 sparsed_approximated_signal=sparse(approximated_signal);
 sparsed_details_signal=sparse(details_signal);
