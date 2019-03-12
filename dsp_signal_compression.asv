@@ -141,8 +141,8 @@ if ~strcmp(handles.basis,'dct')&& ~strcmp(handles.basis,'wht')
 [approximated_signal,details_signal]=dwt(handles.signal,handles.basis);
 else if strcmp(handles.basis,'dct')
     transformed_signal=dct(handles.signal);
-    approximated_signal=transformed_signal(1:(length(transformed_signal)/2),1);
-    details_signal=transformed_signal((length(transformed_signal)/2)+1:length(transformed_signal),1);
+    approximated_signal=transformed_signal(1:(length(transformed_signal)/2)-1,1);
+    details_signal=transformed_signal(length(transformed_signal)/2:length(transformed_signal),1);
     end
 end
 % calculating some compression parameters
@@ -205,8 +205,7 @@ full_signal=full(compressed_file.sparsed_transformed_signal);
 if ~strcmp(handles.basis,'dct')&& ~strcmp(handles.basis,'wht')
 retrievedSignal=idwt(full_signal(:,1),full_signal(:,2),handles.basis);
 else if strcmp(handles.basis,'dct')
-        signal_remerged=reshape(full_signal,[length(handles.signal),1]);
-        retrievedSignal=idct(signal_remerged);
+        
     end
 end
 if ~handles.MATFLAG
