@@ -101,6 +101,13 @@ if handles.file
     end
 end
 
+% Plotting
+axes(handles.original_axis);
+cla;
+plot(handles.signal(1:1000,1))
+hold on
+title(handles.filename);
+
 guidata(hObject,handles);
 
 
@@ -137,18 +144,22 @@ function compress_button_Callback(hObject, eventdata, handles)
 
 
 if ~strcmp(handles.basis,'dct')&& ~strcmp(handles.basis,'wht')
-% transformation
+% Discrete wavelet transformation 
 [approximated_signal,details_signal]=dwt(handles.signal,handles.basis);
 else if strcmp(handles.basis,'dct')
+        % Discrete Cosine transformation
     transformed_signal=dct(handles.signal);
     approximated_signal=transformed_signal(1:(length(transformed_signal)/2),1);
     details_signal=transformed_signal((length(transformed_signal)/2)+1:length(transformed_signal),1);
     end
 end
-% calculating some compression parameters
+
+% calculating threshold
 [threshold,sorh,keepapp]=ddencmp('cmp','wv',details_signal);
 
+
 if strcmp(handles.mode,'Lossy');
+    % in case of choosing lossy
 % Looping to zerofy all the values in my threshold range
 iterator=1;
 while(iterator<size(details_signal,1))
@@ -158,7 +169,8 @@ while(iterator<size(details_signal,1))
       iterator=iterator+1;
 end
 set(handles.edit2,'String',threshold);
-else 
+
+else if strcmp(handles.mode,'Lossless')
     % in case of choosing lossless
 iterator=1;
 % setting threshold to lose the insignificant imformation
@@ -169,6 +181,7 @@ while(iterator<size(details_signal,1))
       iterator=iterator+1;
 end
 set(handles.edit2,'String',threshold/100);
+    end
 end
     
 % Sparse to squeeze zeros out
@@ -182,8 +195,6 @@ save(handles.compressed_filename,'sparsed_transformed_signal');
 compressed_file=dir(handles.compressed_filename);
 handles.compressed_file_size= compressed_file.bytes;
 compression_ratio=handles.filesize/handles.compressed_file_size;
-set(handles.edit1,'String',compression_ratio);
-
 
 % Plotting
 axes(handles.original_axis);
@@ -191,7 +202,13 @@ cla;
 plot(handles.signal(1:1000,1))
 hold on
 title(handles.filename);
+
+% Some GUI tweaks
+set(handles.edit1,'String',compression_ratio);
 set(handles.decompress_button,'Enable','on');
+set(handles.indicator_text,'String','File compressed successfully!');
+
+% Updating GUI
 guidata(hObject,handles);
 
 
@@ -200,22 +217,33 @@ function decompress_button_Callback(hObject, eventdata, handles)
 % hObject    handle to decompress_button (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+% Reading compressed matrix
 compressed_file = matfile(handles.compressed_filename);
 full_signal=full(compressed_file.sparsed_transformed_signal);
+
+% Executing decompression according to basis selected
+% If not dct or wht, then inverse dwt
 if ~strcmp(handles.basis,'dct')&& ~strcmp(handles.basis,'wht')
 retrievedSignal=idwt(full_signal(:,1),full_signal(:,2),handles.basis);
+% If dct then inverse dct
 else if strcmp(handles.basis,'dct')
         signal_remerged=reshape(full_signal,[length(handles.signal),1]);
         retrievedSignal=idct(signal_remerged);
     end
 end
+% Deciding what is the final extension of the decompressed file according
+% to the original file
 if ~handles.MATFLAG
+    % If not .mat, then it's an excel file
 xlswrite('decompressed.xlsx',retrievedSignal);
-decompressed_file=dir('decompressed.xlsx');
 else
+    % else if .mat, retrieve it as .mat file
 save('decompressed.mat','retrievedSignal');
-decompressed_file=dir('decompressed.mat');
 end
+
+% GUI Tweaks
+set(handles.indicator_text,'String','File decompressed successfully!');
 
 plot(retrievedSignal(1:1000,1));
 legend('Original','Decompressed');
