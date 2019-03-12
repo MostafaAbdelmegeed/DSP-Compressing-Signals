@@ -152,6 +152,12 @@ else if strcmp(handles.basis,'dct')
     approximated_signal=transformed_signal(1:floor((length(transformed_signal)/2)),1);
     details_signal=transformed_signal(floor((length(transformed_signal)/2))+1:length(transformed_signal),1);
     end
+else if strcmp(handles.basis,'wht')
+        % Walsh Hadamard Transform
+        transformed_signal=fwht(handles.signal);
+        approximated_signal=transformed_signal(1:floor((length(transformed_signal)/2)),1);
+        details_signal=transformed_signal(floor((length(transformed_signal)/2))+1:length(transformed_signal),1);
+    end
 end
 
 % calculating threshold
@@ -231,6 +237,10 @@ else if strcmp(handles.basis,'dct')
         signal_remerged=reshape(full_signal,[length(handles.signal),1]);
         retrievedSignal=idct(signal_remerged);
     end
+    else if strcmp(handles.basis,'wht')
+        signal_remerged=reshape(full_signal,[length(handles.signal),1]);
+        retrievedSignal=ifwht(signal_remerged);
+        end
 end
 % Deciding what is the final extension of the decompressed file according
 % to the original file
