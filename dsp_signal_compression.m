@@ -152,6 +152,7 @@ while(iterator<size(details_signal,1))
     end
       iterator=iterator+1;
 end
+set(handles.edit2,'String',threshold);
 else 
     % in case of choosing lossless
 iterator=1;
@@ -162,6 +163,7 @@ while(iterator<size(details_signal,1))
     end
       iterator=iterator+1;
 end
+set(handles.edit2,'String',threshold/100);
 end
     
 % Sparse to squeeze zeros out
@@ -204,9 +206,6 @@ save('decompressed.mat','retrievedSignal');
 decompressed_file=dir('decompressed.mat');
 end
 
-% Calculating Data Loss
-Data_loss=1-(decompressed_file.bytes/handles.filesize);
-set(handles.edit2,'String',Data_loss);
 plot(retrievedSignal(1:1000,1));
 legend('Original','Decompressed');
 guidata(hObject,handles);
