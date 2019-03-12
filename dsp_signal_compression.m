@@ -93,7 +93,7 @@ if handles.file
     if strcmp('.mat',ext)
         handles.MATFLAG=true;
         file = matfile(handles.file);
-        handles.signal=file.ult_sig(:,1);
+        handles.signal=file.ult_sig(1:length(file.ult_sig),1);
         set(handles.compress_button,'Enable','on');
     else
         handles.signal= xlsread(handles.file);
@@ -102,8 +102,6 @@ if handles.file
 end
 
 guidata(hObject,handles);
-
-
 
 
 % --- Executes on selection change in mode_menu.
@@ -176,15 +174,16 @@ save(handles.compressed_filename,'sparsed_transformed_signal');
 % Calculating compression factor
 compressed_file=dir(handles.compressed_filename);
 handles.compressed_file_size= compressed_file.bytes;
-compression_ratio=handles.compressed_file_size/handles.filesize;
+compression_ratio=handles.filesize/handles.compressed_file_size;
 set(handles.edit1,'String',compression_ratio);
 
 
 % Plotting
 axes(handles.original_axis);
+cla;
 plot(handles.signal(1:1000,1))
 hold on
-
+title(handles.filename);
 set(handles.decompress_button,'Enable','on');
 guidata(hObject,handles);
 
