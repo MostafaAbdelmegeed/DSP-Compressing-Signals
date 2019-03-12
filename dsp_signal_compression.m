@@ -149,8 +149,8 @@ if ~strcmp(handles.basis,'dct')&& ~strcmp(handles.basis,'wht')
 else if strcmp(handles.basis,'dct')
         % Discrete Cosine transformation
     transformed_signal=dct(handles.signal);
-    approximated_signal=transformed_signal(1:(length(transformed_signal)/2),1);
-    details_signal=transformed_signal((length(transformed_signal)/2)+1:length(transformed_signal),1);
+    approximated_signal=transformed_signal(1:floor((length(transformed_signal)/2)),1);
+    details_signal=transformed_signal(floor((length(transformed_signal)/2))+1:length(transformed_signal),1);
     end
 end
 
