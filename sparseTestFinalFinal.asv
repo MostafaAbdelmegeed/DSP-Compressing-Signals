@@ -12,7 +12,7 @@ for i=1:size(discreteCosineTransform)
 end
 
 compressedSignal = zeros(counter,2);
-for j=1:size(discreteCosineTransform)
+for j=1:counter
     if (discreteCosineTransform(j) > threshold) || (discreteCosineTransform(j) < -1*threshold) 
         compressedSignal(found,1) = j;
         compressedSignal(found,2) = discreteCosineTransform(j);
