@@ -1,4 +1,4 @@
-[Audio_signal,fs]=audioread('nothing.mp3');
+[Audio_signal,fs]=audioread(handles.filename);
  dt = 1/fs;
  t = 0:dt:(length(Audio_signal)*dt)-dt;
  plot(t,Audio_signal);

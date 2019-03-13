@@ -22,7 +22,7 @@ function varargout = dsp_signal_compression(varargin)
 
 % Edit the above text to modify the response to help dsp_signal_compression
 
-% Last Modified by GUIDE v2.5 11-Mar-2019 23:48:37
+% Last Modified by GUIDE v2.5 13-Mar-2019 17:04:18
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -59,6 +59,7 @@ handles.mode='Lossy';
 handles.basis='haar';
 handles.compressed_filename='compressed.mat';
 handles.MATFLAG=false;
+handles.AUDIOFLAG=false;
 % Update handles structure
 guidata(hObject, handles);
 
@@ -82,7 +83,7 @@ function browse_button_Callback(hObject, eventdata, handles)
 % hObject    handle to browse_button (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-[handles.filename,handles.filepath] = uigetfile('*.csv;*.xls;*.xlsv;*.xlsx;*.mat','Select a Signal');
+[handles.filename,handles.filepath] = uigetfile('*.csv;*.xls;*.xlsv;*.xlsx;*.mat;*.wav','Select a Signal');
 handles.file = [handles.filepath handles.filename];
 if handles.file
     set(handles.compress_button,'Enable','off');
@@ -95,16 +96,21 @@ if handles.file
         file = matfile(handles.file);
         handles.signal=file.ult_sig(1:length(file.ult_sig),1);
         set(handles.compress_button,'Enable','on');
-    else
+    else if strcmp('.wav',ext)
+            [handles.signal,handles.fs]=audioread(handles.file);
+            set(handles.compress_button,'Enable','on');
+            handles.AUDIOFLAG=true;
+    else 
         handles.signal= xlsread(handles.file);
         set(handles.compress_button,'Enable','on');
+        end
     end
 end
 
 % Plotting
 axes(handles.original_axis);
 cla;
-plot(handles.signal(1:1000,1))
+plot(handles.signal(:,1))
 hold on
 title(handles.filename);
 
@@ -143,57 +149,96 @@ function compress_button_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 
-if ~strcmp(handles.basis,'dct')&& ~strcmp(handles.basis,'wht')
+if ~strcmp(handles.basis,'dct')
 % Discrete wavelet transformation 
 [approximated_signal,details_signal]=dwt(handles.signal,handles.basis);
 else if strcmp(handles.basis,'dct')
         % Discrete Cosine transformation
-    transformed_signal=dct(handles.signal);
-    approximated_signal=transformed_signal(1:floor((length(transformed_signal)/2)),1);
-    details_signal=transformed_signal(floor((length(transformed_signal)/2))+1:length(transformed_signal),1);
-else if strcmp(handles.basis,'wht')
-        % Walsh Hadamard Transform
-        transformed_signal=fwht(handles.signal);
-        approximated_signal=transformed_signal(1:floor((length(transformed_signal)/2)),1);
-        details_signal=transformed_signal(floor((length(transformed_signal)/2))+1:length(transformed_signal),1);
-    end
+        if handles.AUDIOFLAG
+            transformed_signal=dct(handles.signal);
+            approximated_signal=transformed_signal(1:floor((length(transformed_signal)/2)),1);
+            details_signal=transformed_signal((floor(length(transformed_signal)/2)+1:length(transformed_signal)),1);
+        else
+            transformed_signal=dct(handles.signal);
+            approximated_signal=transformed_signal(1:floor((length(transformed_signal)/2)),1);
+            details_signal=transformed_signal(floor((length(transformed_signal)/2))+1:length(transformed_signal),1);
+        end
     end
 end
 
+if ~handles.AUDIOFLAG
 % calculating threshold
-[threshold,sorh,keepapp]=ddencmp('cmp','wv',details_signal);
-
+[threshold1,sorh,keepapp]=ddencmp('cmp','wv',details_signal);
+else if handles.AUDIOFLAG
+        [threshold1,sorh,keepapp]=ddencmp('cmp','wv',details_signal);
+        [threshold2,sorh,keepapp]=ddencmp('cmp','wv',approximated_signal);   
+    end
+end
 
 if strcmp(handles.mode,'Lossy');
     % in case of choosing lossy
+    if ~handles.AUDIOFLAG
 % Looping to zerofy all the values in my threshold range
 iterator=1;
 while(iterator<size(details_signal,1))
-    if details_signal(iterator,1) > -1*threshold && details_signal(iterator,1) < threshold
+    if details_signal(iterator,1) > -1*threshold1 && details_signal(iterator,1) < threshold1
         details_signal(iterator,1)=0;
     end
       iterator=iterator+1;
 end
-set(handles.edit2,'String',threshold);
-
-else if strcmp(handles.mode,'Lossless')
-    % in case of choosing lossless
-iterator=1;
-% setting threshold to lose the insignificant imformation
-while(iterator<size(details_signal,1))
-    if details_signal(iterator,1) > -1*(threshold/100) && details_signal(iterator,1) < (threshold/100)
-        details_signal(iterator,1)=0;
     end
-      iterator=iterator+1;
-end
-set(handles.edit2,'String',threshold/100);
-    end
-end
     
-% Sparse to squeeze zeros out
+if handles.AUDIOFLAG
+    % Looping to zerofy all the values in my threshold range
+iterator=1;
+while(iterator<size(approximated_signal,1))
+    if approximated_signal(iterator,1) > -1*threshold2*2 && approximated_signal(iterator,1) < threshold2*2
+        approximated_signal(iterator,1)=0;
+    end
+      iterator=iterator+1;
+end
+iterator=1;
+while(iterator<size(details_signal,1))
+    if details_signal(iterator,1) > -1*threshold1 && details_signal(iterator,1) < threshold1
+        details_signal(iterator,1)=0;
+    end
+      iterator=iterator+1;
+end
+end
+
+set(handles.edit2,'String',threshold1);
+% % Sparse to squeeze zeros out
 sparsed_approximated_signal=sparse(approximated_signal);
 sparsed_details_signal=sparse(details_signal);
-sparsed_transformed_signal=[sparsed_approximated_signal sparsed_details_signal];
+if handles.AUDIOFLAG
+    sparsed_transformed_signal=sparsed_approximated_signal;
+else
+    sparsed_transformed_signal=[sparsed_approximated_signal sparsed_details_signal];
+
+end
+else if strcmp(handles.mode,'Lossless')
+    % in case of choosing lossless
+% iterator=1;
+% % setting threshold to lose the insignificant imformation
+% while(iterator<size(details_signal,1))
+%     if details_signal(iterator,1) > -1*(threshold/100) && details_signal(iterator,1) < (threshold/100)
+%         details_signal(iterator,1)=0;
+%     end
+%       iterator=iterator+1;
+% end
+% set(handles.edit2,'String',threshold/100);
+%     end
+% end
+% 
+% 
+% 
+%     
+
+lossless_transformed_signal=[approximated_signal details_signal];
+sparsed_transformed_signal=single(lossless_transformed_signal);
+    end
+end
+
 % Save the file squeezed out of zeros
 save(handles.compressed_filename,'sparsed_transformed_signal');
 
@@ -205,7 +250,7 @@ compression_ratio=handles.filesize/handles.compressed_file_size;
 % Plotting
 axes(handles.original_axis);
 cla;
-plot(handles.signal(1:1000,1))
+plot(handles.signal(:,1))
 hold on
 title(handles.filename);
 
@@ -230,33 +275,43 @@ full_signal=full(compressed_file.sparsed_transformed_signal);
 
 % Executing decompression according to basis selected
 % If not dct or wht, then inverse dwt
-if ~strcmp(handles.basis,'dct')&& ~strcmp(handles.basis,'wht')
-retrievedSignal=idwt(full_signal(:,1),full_signal(:,2),handles.basis);
+if ~strcmp(handles.basis,'dct')
+    if ~handles.AUDIOFLAG
+    retrievedSignal=idwt(full_signal(:,1),full_signal(:,2),handles.basis);
+    else
+     retrievedSignal=idwt(full_signal(:,1),[],handles.basis);
+    end
 % If dct then inverse dct
 else if strcmp(handles.basis,'dct')
+        if ~handles.AUDIOFLAG
         signal_remerged=reshape(full_signal,[length(handles.signal),1]);
         retrievedSignal=idct(signal_remerged);
-    else if strcmp(handles.basis,'wht')
+        else
         signal_remerged=reshape(full_signal,[length(handles.signal),1]);
-        retrievedSignal=ifwht(signal_remerged);
+        retrievedSignal=idct(signal_remerged);
         end
     end
 end
 
 % Deciding what is the final extension of the decompressed file according
 % to the original file
-if ~handles.MATFLAG
+if ~handles.MATFLAG && ~handles.AUDIOFLAG
     % If not .mat, then it's an excel file
 xlswrite('decompressed.xlsx',retrievedSignal);
-else
+    else if handles.MATFLAG
     % else if .mat, retrieve it as .mat file
-save('decompressed.mat','retrievedSignal');
+    save('decompressed.mat','retrievedSignal');
+        else if handles.AUDIOFLAG
+            audiowrite('decompressed.wav',retrievedSignal,handles.fs);
+            end
+        end
 end
+
 
 % GUI Tweaks
 set(handles.indicator_text,'String','File decompressed successfully!');
 
-plot(retrievedSignal(1:1000,1));
+plot(retrievedSignal(:,1));
 legend('Original','Decompressed');
 guidata(hObject,handles);
 
@@ -338,3 +393,10 @@ function edit2_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes during object creation, after setting all properties.
+function indicator_text_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to indicator_text (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
