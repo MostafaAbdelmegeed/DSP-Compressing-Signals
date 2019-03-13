@@ -157,7 +157,6 @@ else if strcmp(handles.basis,'wht')
         approximated_signal=transformed_signal(1:floor((length(transformed_signal)/2)),1);
         details_signal=transformed_signal(floor((length(transformed_signal)/2))+1:length(transformed_signal),1);
     end
-    end
 end
 
 % calculating threshold
