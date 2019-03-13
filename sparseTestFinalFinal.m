@@ -1,9 +1,10 @@
 ecgSignal = xlsread('C:\Users\manog\Documents\GitHub\SignalViewer-GUI\ECG Signal.csv');
 discreteCosineTransform = dct(ecgSignal);
 
-threshold = 0.1;
+threshold = 0.001;
 counter = 0;
 found = 1;
+retrieve = 1;
 
 for i=1:size(discreteCosineTransform)
     if (discreteCosineTransform(i) > threshold) || (discreteCosineTransform(i) < -1*threshold) 
@@ -19,11 +20,19 @@ for j=1:size(discreteCosineTransform)
         found = found + 1;
     end
 end
-% for k=1:size(compressedSignal)
-%     if compressedSignal(k,1) == 0
-%         zeroValue = k;
-%         break;
-%     end
-% end
-% finalCompressedSignal = (compressedSignal(1:zeroValue,:));
+
+
+decompressedSignal = zeros(length(discreteCosineTransform),1);
+for k=1:size(decompressedSignal)
+    if compressedSignal(retrieve,1) == k;
+        decompressedSignal(k) = compressedSignal(retrieve,2);
+        retrieve = retrieve+1;
+    end
+end
+
+finalDecompressedSignal = idct(decompressedSignal);
+figure
+subplot(2,1,1),plot(ecgSignal);
+subplot(2,1,2),plot(finalDecompressedSignal);
+
 whos;
